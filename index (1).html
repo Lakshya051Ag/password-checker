@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Password Strength Checker</title>
+  <style>
+
+    /* ---- PAGE LAYOUT ---- */
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 36px;
+      width: 440px;
+      color: #eee;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      color: #fff;
+    }
+
+    p.subtitle {
+      margin: 0 0 24px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    /* ---- INPUT BOX ---- */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 15px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #0f3460;
+      color: #fff;
+      outline: none;
+    }
+
+    input:focus { border-color: #e94560; }
+
+    button {
+      padding: 10px 14px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover { background: #c73652; }
+
+    /* ---- SCORE ---- */
+    #score-text {
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    #label-text {
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 14px;
+      color: #aaa;
+    }
+
+    /* ---- PROGRESS BAR ---- */
+    #bar-track {
+      height: 12px;
+      background: #333;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    #bar-fill {
+      height: 12px;
+      width: 0%;
+      border-radius: 10px;
+      background: #e94560;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+
+    /* ---- CHECK ITEMS ---- */
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      margin-bottom: 7px;
+      border-radius: 7px;
+      font-size: 13px;
+      background: #1e1e3a;
+      color: #888;
+      transition: all 0.3s;
+    }
+
+    .check.pass {
+      background: #0d2b1f;
+      color: #4cda81;
+    }
+
+    /* circle dot */
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+
+    .check.pass .dot { background: #4cda81; }
+
+    /* ---- SUGGESTION BOX ---- */
+    #suggestion {
+      margin-top: 20px;
+      padding: 14px;
+      background: #1a2a1a;
+      border-left: 4px solid #4cda81;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #aaa;
+      display: none;
+    }
+
+    #suggestion span {
+      color: #4cda81;
+      font-weight: bold;
+      word-break: break-all;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <h2>Password Strength Checker</h2>
+  <p class="subtitle">Type a password to see how strong it is</p>
+
+  <!-- INPUT ROW -->
+  <div class="input-row">
+    <input type="password" id="pwInput" placeholder="Enter your password...">
+    <button onclick="toggleShow()">Show</button>
+  </div>
+
+  <!-- SCORE -->
+  <div id="score-text">0 / 10</div>
+  <div id="label-text">Start typing...</div>
+
+  <!-- PROGRESS BAR -->
+  <div id="bar-track">
+    <div id="bar-fill"></div>
+  </div>
+
+  <!-- 5 CHECK ITEMS -->
+  <div class="check" id="c-length">
+    <div class="dot"></div> 8 or more characters
+  </div>
+  <div class="check" id="c-upper">
+    <div class="dot"></div> Uppercase letter (A-Z)
+  </div>
+  <div class="check" id="c-lower">
+    <div class="dot"></div> Lowercase letter (a-z)
+  </div>
+  <div class="check" id="c-number">
+    <div class="dot"></div> Number (0-9)
+  </div>
+  <div class="check" id="c-special">
+    <div class="dot"></div> Special character (!@#$%...)
+  </div>
+
+  <!-- SUGGESTION -->
+  <div id="suggestion">
+    Try a stronger password: <span id="sug-text"></span>
+  </div>
+
+</div>
+
+<script>
+
+  // ---- SHOW / HIDE PASSWORD ----
+  function toggleShow() {
+    const inp = document.getElementById('pwInput');
+    const btn = document.querySelector('button');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      btn.textContent = 'Hide';
+    } else {
+      inp.type = 'password';
+      btn.textContent = 'Show';
+    }
+  }
+
+  // ---- MAIN FUNCTION — runs every time user types ----
+  document.getElementById('pwInput').addEventListener('input', function () {
+
+    const pw = this.value;
+
+    // --- 5 CHECKS (each returns true or false) ---
+    const checks = {
+      'c-length':  pw.length >= 8,
+      'c-upper':   /[A-Z]/.test(pw),
+      'c-lower':   /[a-z]/.test(pw),
+      'c-number':  /[0-9]/.test(pw),
+      'c-special': /[^A-Za-z0-9]/.test(pw),
+    };
+
+    // --- COUNT HOW MANY PASSED ---
+    let passed = 0;
+    for (let id in checks) {
+      const el = document.getElementById(id);
+      if (checks[id]) {
+        el.classList.add('pass');
+        passed++;
+      } else {
+        el.classList.remove('pass');
+      }
+    }
+
+    // --- SCORE OUT OF 10 ---
+    const score = passed * 2;
+
+    // --- UPDATE SCORE TEXT ---
+    document.getElementById('score-text').textContent = score + ' / 10';
+
+    // --- UPDATE LABEL ---
+    const labels = ['', 'Very Weak', 'Very Weak', 'Weak', 'Weak', 'Moderate', 'Moderate', 'Strong', 'Strong', 'Very Strong', 'Very Strong'];
+    document.getElementById('label-text').textContent = pw.length === 0 ? 'Start typing...' : labels[score];
+
+    // --- UPDATE BAR ---
+    const bar = document.getElementById('bar-fill');
+    bar.style.width = (score * 10) + '%';
+    if      (score <= 2) bar.style.background = '#e74c3c';
+    else if (score <= 4) bar.style.background = '#e67e22';
+    else if (score <= 6) bar.style.background = '#f1c40f';
+    else if (score <= 8) bar.style.background = '#2ecc71';
+    else                 bar.style.background = '#00b894';
+
+    // --- SUGGESTION (only if weak) ---
+    const sug = document.getElementById('suggestion');
+    if (pw.length > 0 && score < 6) {
+      // make it stronger: capitalize + add number + special char
+      const stronger = pw[0].toUpperCase() + pw.slice(1) + '99@!';
+      document.getElementById('sug-text').textContent = stronger;
+      sug.style.display = 'block';
+    } else {
+      sug.style.display = 'none';
+    }
+
+  });
+
+</script>
+
+</body>
+</html>
